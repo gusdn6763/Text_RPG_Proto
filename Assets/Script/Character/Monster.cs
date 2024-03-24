@@ -105,33 +105,33 @@ public class Monster : Character
 
     public virtual void Damaged()
     {
-        if (Player.instance.CanAttack && Player.instance.Attacked == false)
-        {
-            Player.instance.CanAttack = false;
-            Player.instance.Attacked = true;
-
-            (AttackType attackType, float damage) = Player.instance.Attack();
-
-            //데미지를 받을 부위를 랜덤으로 선택
-            int pos = Random.Range(0, part.Count);
-
-            if (part[pos].Aviod(Player.instance.CharacterStat.agility))
-                CombatTextManager.instance.CreateText(transform.position, damage.ToString(), SCTTYPE.MISS, false);
-            else
-            {
-                //부위 체력 감소
-                float reduceDamage = part[pos].Damaged(attackType, damage);
-
-                currentHp -= reduceDamage;
-                //풀체력이 0일시 사망
-                if (currentHp <= 0)
-                    Die();
-
-                CombatTextManager.instance.CreateText(transform.position, damage.ToString(), SCTTYPE.DAMAGE, false);
-            }
-        }
+        if (Player.instance.playerAction == null)
+            Player.instance.playerAction = Damaged2;
         else
-            Player.instance.ShowIntroduce("아직 공격할 수 없다.");
+            Player.instance.ShowIntroduce("이미 선택했다.");
+    }
+
+    public void Damaged2()
+    {
+        (AttackType attackType, float damage) = Player.instance.Attack();
+
+        //데미지를 받을 부위를 랜덤으로 선택
+        int pos = Random.Range(0, part.Count);
+
+        if (part[pos].Aviod(Player.instance.CharacterStat.agility))
+            CombatTextManager.instance.CreateText(transform.position, damage.ToString(), SCTTYPE.MISS, false);
+        else
+        {
+            //부위 체력 감소
+            float reduceDamage = part[pos].Damaged(attackType, damage);
+
+            currentHp -= reduceDamage;
+            //풀체력이 0일시 사망
+            if (currentHp <= 0)
+                Die();
+
+            CombatTextManager.instance.CreateText(transform.position, damage.ToString(), SCTTYPE.DAMAGE, false);
+        }
     }
 
     public override void Die()

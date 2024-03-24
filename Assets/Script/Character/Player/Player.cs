@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public delegate void PlayerAction();
 
 public class Player : Character
 {
@@ -14,6 +15,7 @@ public class Player : Character
     [SerializeField] private InfoUI info;
 
     [Header("플레이어 전투")]
+    public PlayerAction playerAction;
     [SerializeField] private float runValue = 50f;
 
     [Header("플레이어")]
@@ -29,8 +31,6 @@ public class Player : Character
     private float waitTime = 0;
     private bool isMove = false;
     private bool combatOn = false;
-    private bool canAttack = false;
-    private bool attacked = false;
 
     [Header("수면 디버프-테스트용")]
     public float sleep;
@@ -114,8 +114,7 @@ public class Player : Character
             {
                 waitTime = 0;
                 reloading = 0;
-                CanAttack = false;
-                attacked = false;
+                playerAction = null;
 
                 if (combatOn)
                     dungeonUI.CombatEndUi();
@@ -126,8 +125,6 @@ public class Player : Character
         }
     }
     public float RecognitionDistance { get { return recognitionDistance; } }
-    public bool CanAttack { get { return canAttack; } set { canAttack = value; } }
-    public bool Attacked { get { return attacked; } set { attacked = value; } }
     public int Money { get { return money; } set { money = value; } }
 
     protected override void Awake()
@@ -157,10 +154,10 @@ public class Player : Character
     {
         if (GameManager.instance.dungeonEnter)
         {
-            if (Input.GetKeyDown(KeyCode.W))
-                isMove = true;
-            if (Input.GetKeyDown(KeyCode.S))
+            if (Input.GetMouseButtonDown(0))
                 isMove = false;
+            if (Input.GetMouseButtonDown(1))
+                isMove = true;
 
             if (isMove)
                 transform.position += new Vector3(0f, 0f, speed * Time.deltaTime);
@@ -169,26 +166,18 @@ public class Player : Character
             {
                 if (reloadTime >= waitTime)       //장전
                 {
-                    CanAttack = false;
                     waitTime += Time.deltaTime;
                     dungeonUI.AttackWait = waitTime / reloadTime;
                 }
-                else if (reloadTime >= reloading)       //장전
+                else if (playerAction != null)
                 {
-                    CanAttack = true;
-                    reloading += Time.deltaTime;
-                    dungeonUI.Reloading = reloading / reloadTime;
-                }
-                else if (Attacked == false && CanAttack && reloading >= waitTime)
-                {
-                    reloading = 0;
-                    CanAttack = false;
-                    ShowIntroduce("턴을 놓쳤다");
+                    playerAction();
+                    waitTime = 0;
                 }
                 else
                 {
-                    reloading = 0;
-                    Attacked = false;
+                    ShowIntroduce("턴을 놓쳤다");
+                    waitTime = 0;
                 }
             }
         }
@@ -196,8 +185,6 @@ public class Player : Character
 
     public (AttackType, float) Attack()
     {
-        Attacked = true;
-
         Armor armor = playerSockets.HaveArmor(ArmorType.HandRight);
         if (armor is Weapon)
         {
@@ -243,23 +230,26 @@ public class Player : Character
     }
     public void Run()
     {
-        if (CanAttack)
+        if (playerAction == null)
         {
-            if (Random.Range(0, 100) < runValue + ((characterStat.agility - FindMoustAgility()) * 10))
-            {
-                GameManager.instance.mobSpawner.ResetAllObj();
-                monsters.Clear();
-                CombatOn = false;
-            }
-            else
-            {
-                CanAttack = false;
-            }
+            playerAction = Run2;
         }
         else
         {
-            ShowIntroduce(Constant.notRun);
+            ShowIntroduce("이미 선택했다");
         }
+    }
+
+    public void Run2()
+    {
+        if (Random.Range(0, 100) < runValue + ((characterStat.agility - FindMoustAgility()) * 10))
+        {
+            GameManager.instance.mobSpawner.ResetAllObj();
+            monsters.Clear();
+            CombatOn = false;
+        }
+        else
+            ShowIntroduce("도주실패");
     }
 
     public float FindMoustAgility()
