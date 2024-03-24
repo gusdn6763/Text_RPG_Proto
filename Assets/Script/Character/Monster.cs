@@ -113,6 +113,7 @@ public class Monster : Character
 
     public void Damaged2()
     {
+        Player.instance.playerAction = null;
         (AttackType attackType, float damage) = Player.instance.Attack();
 
         //데미지를 받을 부위를 랜덤으로 선택

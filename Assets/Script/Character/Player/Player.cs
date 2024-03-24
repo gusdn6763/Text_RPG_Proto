@@ -242,6 +242,7 @@ public class Player : Character
 
     public void Run2()
     {
+        Player.instance.playerAction = null;
         if (Random.Range(0, 100) < runValue + ((characterStat.agility - FindMoustAgility()) * 10))
         {
             GameManager.instance.mobSpawner.ResetAllObj();
